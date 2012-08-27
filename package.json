@@ -1,0 +1,20 @@
+{
+  "name": "scrapi",
+  "version": "0.0.0",
+  "description": "",
+  "main": "test.js",
+  "dependencies": {
+    "rem": "~0.5.0",
+    "trumpet": "~0.3.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timcameronryan/scrapi.git"
+  },
+  "author": "",
+  "license": "MIT"
+}

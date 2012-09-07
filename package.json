@@ -5,7 +5,8 @@
   "main": "test.js",
   "dependencies": {
     "rem": "~0.5.0",
-    "trumpet": "~0.3.0"
+    "trumpet": "~0.3.0",
+    "cssax": "0.0.3"
   },
   "devDependencies": {},
   "scripts": {

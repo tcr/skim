@@ -6,11 +6,15 @@ var cssax = require('cssax');
 var spec = {
   base: 'http://news.ycombinator.com/',
   spec: {
-    $query: 'td.title ~ td ~ td.title > a',
+    $query: 'table table tr:nth-child(3n+1)',
     $each: {
-      title: '(text)',
-      link: '(attr href)'
-    }
+      title: '(text) a',
+      link: '(attr href) a',
+      user: '(text) + tr a[href^=user]',
+      comments: '(text ^\\d+) + tr a[href^=item]',
+      id: '(attr href \\d+$) + tr a[href^=item]'
+    },
+    $filter: 'id'
   }
 }
 
@@ -35,14 +39,15 @@ function scrapi (manifest, path, next) {
       ret.push(obj = {});
     });
     Object.keys(spec.$each).forEach(function (key) {
-      var query = (spec.$query + ' ' + spec.$each[key].replace(/^\(.*?\)/, '')).trim();
+      var query = (spec.$query.replace(/(?=,)|$/g, ' ' + spec.$each[key].replace(/^\(.*?\)/, ''))).trim();
       stream.query(query).on('match', function (tag, attributes) {
         var match;
-        if (match = spec.$each[key].match(/^\(attr (\S+?)\)/)) {
-          obj[key] = attributes[match[1]];
-        } else if (match = spec.$each[key].match(/^\(text\)/)) {
+        if (match = spec.$each[key].match(/^\(attr( [^)]+?)?( [^)]+?)?\)/)) {
+          var value = attributes[match[1].substr(1)] || '';
+          obj[key] = (match[2] ? (value.match(new RegExp(match[2].substr(1))) || [])[0] : value) || '';
+        } else if (match = spec.$each[key].match(/^\(text( [^)]+?)?\)/)) {
           this.readText(function (text) {
-            obj[key] = text;
+            obj[key] = (match[1] ? (text.match(new RegExp(match[1].substr(1))) || [])[0] : text) || '';
           })
         }
       });
@@ -50,7 +55,9 @@ function scrapi (manifest, path, next) {
 
     // Pipe our content.
     res.pipe(stream).on('end', function () {
-      next(ret);
+      next(ret.filter(function (obj) {
+        return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) : obj;
+      }));
     });
   });
 }

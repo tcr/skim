@@ -14,8 +14,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/timcameronryan/scrapi.git"
+    "url": "https://github.com/tcr/scrapi.git"
   },
-  "author": "",
+  "author": "Tim Cameron Ryan",
   "license": "MIT"
 }

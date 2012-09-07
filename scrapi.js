@@ -1,23 +1,6 @@
 var rem = require('rem');
 var cssax = require('cssax');
 
-// Define a specification for scraping Hacker News
-
-var spec = {
-  base: 'http://news.ycombinator.com/',
-  spec: {
-    $query: 'table table tr:nth-child(3n+1)',
-    $each: {
-      title: '(text) a',
-      link: '(attr href) a',
-      user: '(text) + tr a[href^=user]',
-      comments: '(text ^\\d+) + tr a[href^=item]',
-      id: '(attr href \\d+$) + tr a[href^=item]'
-    },
-    $filter: 'id'
-  }
-}
-
 // Code
 
 function stripHTML (html) {
@@ -62,8 +45,4 @@ function scrapi (manifest, path, next) {
   });
 }
 
-// Run our spec
-
-scrapi(spec, '', function (ret) {
-  console.log(ret);
-});
+module.exports = scrapi;

@@ -6,7 +6,7 @@ Manifest:
 {
   "base": "http://news.ycombinator.com/",
   "spec": {
-    "$query": "td + td.title a",
+    "$query": "td.title ~ td ~ td.title > a",
     "$each": {
       "title": "(text)",
       "link": "(attr href)""

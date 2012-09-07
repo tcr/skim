@@ -1,12 +1,12 @@
-var trumpet = require('trumpet');
 var rem = require('rem');
+var cssax = require('cssax');
 
 // Define a specification for scraping Hacker News
 
 var spec = {
   base: 'http://news.ycombinator.com/',
   spec: {
-    $query: 'td + td.title a',
+    $query: 'td.title ~ td ~ td.title > a',
     $each: {
       title: '(text)',
       link: '(attr href)'
@@ -23,7 +23,7 @@ function stripHTML (html) {
 function scrapi (manifest, path, next) {
   var spec = manifest.spec;
   rem.url(manifest.base, path).get(function (err, res) {
-    var tr = trumpet();
+    var stream = cssax.createStream();
 
     if ('$each' in spec) {
       var ret = [];
@@ -31,24 +31,25 @@ function scrapi (manifest, path, next) {
     }
 
     // Parse spec.
-    tr.select(spec.$query, function (node) {
+    stream.query(spec.$query).on('match', function (tag, attributes) {
       ret.push(obj = {});
     });
     Object.keys(spec.$each).forEach(function (key) {
-      tr.select((spec.$query + ' ' + spec.$each[key].replace(/^\(.*?\)/, '')).trim(), function (node) {
+      var query = (spec.$query + ' ' + spec.$each[key].replace(/^\(.*?\)/, '')).trim();
+      stream.query(query).on('match', function (tag, attributes) {
         var match;
         if (match = spec.$each[key].match(/^\(attr (\S+?)\)/)) {
-          obj[key] = node.attributes[match[1]];
+          obj[key] = attributes[match[1]];
         } else if (match = spec.$each[key].match(/^\(text\)/)) {
-          node.html(function (html) {
-            obj[key] = stripHTML(html);
+          this.readText(function (text) {
+            obj[key] = text;
           })
         }
       });
     });
 
     // Pipe our content.
-    res.pipe(tr).on('end', function () {
+    res.pipe(stream).on('end', function () {
       next(ret);
     });
   });

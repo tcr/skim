@@ -38,36 +38,13 @@ function parseValueSpec (str) {
   };
 }
 
+// Setup listeners based on a JSON specification or subspec.
 function onSpecification (stream, spec, prefix) {
   prefix = prefix || '';
   spec = (typeof spec == 'string') ? parseValueSpec(spec) : spec;
 
-  if (!('$query' in spec)) {
-
-    // Object of named fields to populate.
-    var parsers = {};
-    Object.keys(spec).forEach(function (key) {
-      parsers[key] = onSpecification(stream, spec[key], prefix);
-    });
-
-    return {
-      result: function () {
-        var values = {};
-        Object.keys(parsers).forEach(function (key) {
-          values[key] = parsers[key].result();
-        })
-        return values;
-      },
-      reset: function () {
-        Object.keys(parsers).forEach(function (key) {
-          parsers[key].reset();
-        })
-      }
-    };
-  }
-
   // Augment $query parameter.
-  var query = prefix + ' ' + spec.$query;
+  var query = prefix + (spec.$query ? ' ' + spec.$query : '');
 
   if ('$each' in spec) {
 
@@ -110,9 +87,35 @@ function onSpecification (stream, spec, prefix) {
     };
   }
 
-  throw new Error('Invalid specification for query ' + JSON.stringify(query));
+  // Object of named fields to populate.
+  var parsers = {};
+  Object.keys(spec).filter(function (key) {
+    return key.charAt(0) != '$';
+  }).forEach(function (key) {
+    parsers[key] = onSpecification(stream, spec[key], query);
+  });
+
+  return {
+    result: function () {
+      var values = ('$query' in spec) ? null : {};
+      Object.keys(parsers).forEach(function (key) {
+        var res = parsers[key].result();
+        if (res !== null) {
+          values = values || {};
+          values[key] = res;
+        }
+      })
+      return values;
+    },
+    reset: function () {
+      Object.keys(parsers).forEach(function (key) {
+        parsers[key].reset();
+      })
+    }
+  };
 }
 
+// Create a Scrapi object that can stream and parse pages.
 function scrapi (manifest) {
   var api = rem.create({
     base: manifest.base,
@@ -151,20 +154,23 @@ function scrapi (manifest) {
     var stream = cssax.createStream();
 
     var spec = null;
-    Object.keys(manifest.spec).forEach(function (key) {
-      var parts = key.replace(/^\//, '').split('?');
-      var path = parts.shift(), query = parts.join('?');
-      if (req.url.pathname.replace(/^\//, '') == path) {
-        if (query) {
-          var query = rem.util.qs.parse(query);
-          for (var qkey in query) {
-            if (req.url.query[qkey] != query[qkey]) {
-              return;
+    Object.keys(manifest.spec).some(function (fullkey) {
+      return fullkey.split(/\S+/).some(function (key) {
+        var parts = key.replace(/^\//, '').split('?');
+        var path = parts.shift(), query = parts.join('?');
+        if (req.url.pathname.replace(/^\//, '') == path) {
+          if (query) {
+            var query = rem.util.qs.parse(query);
+            for (var qkey in query) {
+              if (req.url.query[qkey] != query[qkey]) {
+                return;
+              }
             }
           }
+          spec = manifest.spec[key];
+          return true;
         }
-        spec = manifest.spec[key];
-      }
+      });
     });
     spec = spec || manifest.spec['*'] || {};
 

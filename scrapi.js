@@ -19,14 +19,18 @@ function combineQueries (a, b) {
 
 function onValue (stream, query, str, callback) {
   stream.query(query).on('match', function (tag, attributes) {
-    var match;
     if (match = str.match(/^\(attr( [^)]+?)?( [^)]+?)?\)/)) {
       var value = attributes[match[1].substr(1)] || '';
       callback((match[2] ? (value.match(new RegExp(match[2].substr(1))) || [])[0] : value) || '');
     } else if (match = str.match(/^\(text( [^)]+?)?\)/)) {
-      this.readText(function (text) {
+      this.readText(function (match, text) {
         callback((match[1] ? (text.match(new RegExp(match[1].substr(1))) || [])[0] : text) || '');
-      })
+      }.bind(null, match))
+    } else if (match = str.match(/^\(html( [^)]+?)?\)/)) {
+      this.readHTML(function (match, text) {
+        text = text.replace(/^<[^>]+>|<[^>]+>$/g, '')
+        callback((match[1] ? (text.match(new RegExp(match[1].substr(1))) || [])[0] : text) || '');
+      }.bind(null, match))
     }
   });
 }
@@ -49,18 +53,21 @@ function onSpecification (stream, spec, prefix) {
   if ('$each' in spec) {
 
     // Array to populate.
-    var ret = [];
+    var ret = [], first = true;
     var parser = onSpecification(stream, spec.$each, query);
     stream.query(query).on('match', function (tag, attributes) {
-      this.skip(function () {
+      if (first) {
+        first = false;
+      } else {
         ret.push(parser.result());
-        parser.reset();
-      });
+      }
+      parser.reset();
     });
   
     return {
       result: function () {
-        return ret.filter(function (obj) {
+        var vals = ret.concat([parser.result()]);
+        return vals.filter(function (obj) {
           return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) && obj[spec.$filter] : obj;
         });
       },
@@ -128,7 +135,11 @@ function scrapi (manifest) {
 
   api.pre('request', function (req, next) {
     jar.getCookieString(rem.util.url.format(req.url), function (err, cookies) {
-      req.headers['cookie'] = cookies;
+      if (cookies) {
+        req.headers['cookie'] = cookies;
+      }
+      req.headers['accept'] = '*/*';
+      delete req.headers['host'];
       req.redirect = false;
       next();
     })
@@ -153,10 +164,11 @@ function scrapi (manifest) {
   api.parseStream = function (req, res, next) {
     var stream = cssax.createStream();
 
+    // Find a specification URL that matches.
     var spec = null;
     Object.keys(manifest.spec).some(function (fullkey) {
-      return fullkey.split(/\S+/).some(function (key) {
-        var parts = key.replace(/^\//, '').split('?');
+      return fullkey.split(/\s+/).some(function (key) {
+        var parts = key.replace(/^\//g, '').split('?');
         var path = parts.shift(), query = parts.join('?');
         if (req.url.pathname.replace(/^\//, '') == path) {
           if (query) {
@@ -167,13 +179,14 @@ function scrapi (manifest) {
               }
             }
           }
-          spec = manifest.spec[key];
+          spec = manifest.spec[fullkey];
           return true;
         }
       });
     });
     spec = spec || manifest.spec['*'] || {};
 
+    // Add specification parser, return result after stream ends.
     var parser = onSpecification(stream, spec);
     res.pipe(stream)
       .on('error', function () { }) // Toss errors

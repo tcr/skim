@@ -30,6 +30,13 @@ function extract (stream, query, str, next) {
 }
 
 function parseObject (stream, spec, next) {
+  if (typeof spec == 'string') {
+    spec = {
+      $value: (spec.match(/^[^)]+\)/) || [])[0],
+      $query: (spec.match(/\)\s*(.*)$/) || [])[1]
+    };
+  }
+
   if ('$query' in spec) {
     if ('$each' in spec) {
       var ret = [];
@@ -110,14 +117,14 @@ function scrapi (manifest) {
     }, next);
   });
 
-  api.parseStream = function (res, next) {
+  api.parseStream = function (req, res, next) {
     var stream = cssax.createStream();
-
+    
     // Toss errors.
     stream.on('error', function () { });
 
     var page = {};
-    parseObject(stream, manifest.spec, function (json) {
+    parseObject(stream, manifest.spec[req.url.pathname] || {}, function (json) {
       page = json;
     });
 

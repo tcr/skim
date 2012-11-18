@@ -4,13 +4,11 @@ var read = require('read');
 var manifest = {
   base: 'https://mobile.twitter.com/',
   spec: {
-    authenticity_token: {
-      $query: 'input[name="authenticity_token"]',
-      $value: '(attr value)'
+  	'/session/new': {
+    	authenticity_token: '(attr value) input[name="authenticity_token"]',
     },
-    name: {
-      $query: 'div.fullname',
-      $value: '(text ^[^\\n]+)'
+    '/account': {
+    	name: '(text ^[^\\n]+) div.fullname'
     }
   }
 };

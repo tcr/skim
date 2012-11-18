@@ -9,17 +9,16 @@ var manifest = {
     "$query": "td.title ~ td ~ td.title > a",
     "$each": {
       "title": "(text)",
-      "link": "(attr href)""
+      "link": "(attr href)"
     }
   }
-}
+};
 ```
 
 Create your API:
 
 ```javascript
 var api = scrapi(manifest);
-
 api('/').get(function (err, json) {
   console.log(json);
 })

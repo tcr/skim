@@ -17,80 +17,100 @@ function combineQueries (a, b) {
 
 // Scrapi
 
-function extract (stream, query, str, next) {
+function onValue (stream, query, str, callback) {
   stream.query(query).on('match', function (tag, attributes) {
     var match;
     if (match = str.match(/^\(attr( [^)]+?)?( [^)]+?)?\)/)) {
       var value = attributes[match[1].substr(1)] || '';
-      next((match[2] ? (value.match(new RegExp(match[2].substr(1))) || [])[0] : value) || '');
+      callback((match[2] ? (value.match(new RegExp(match[2].substr(1))) || [])[0] : value) || '');
     } else if (match = str.match(/^\(text( [^)]+?)?\)/)) {
       this.readText(function (text) {
-        next((match[1] ? (text.match(new RegExp(match[1].substr(1))) || [])[0] : text) || '');
+        callback((match[1] ? (text.match(new RegExp(match[1].substr(1))) || [])[0] : text) || '');
       })
     }
   });
 }
 
-function parseObject (stream, spec, next) {
-  if (typeof spec == 'string') {
-    spec = {
-      $value: (spec.match(/^[^)]+\)/) || [])[0],
-      $query: (spec.match(/\)\s*(.*)$/) || [])[1]
+function parseValueSpec (str) {
+  return {
+    $value: (str.match(/^[^)]+\)/) || [])[0],
+    $query: (str.match(/\)\s*(.*)$/) || [])[1]
+  };
+}
+
+function onSpecification (stream, spec, prefix) {
+  prefix = prefix || '';
+  spec = (typeof spec == 'string') ? parseValueSpec(spec) : spec;
+
+  if (!('$query' in spec)) {
+
+    // Object of named fields to populate.
+    var parsers = {};
+    Object.keys(spec).forEach(function (key) {
+      parsers[key] = onSpecification(stream, spec[key], prefix);
+    });
+
+    return {
+      result: function () {
+        var values = {};
+        Object.keys(parsers).forEach(function (key) {
+          values[key] = parsers[key].result();
+        })
+        return values;
+      },
+      reset: function () {
+        Object.keys(parsers).forEach(function (key) {
+          parsers[key].reset();
+        })
+      }
     };
   }
 
-  if ('$query' in spec) {
-    if ('$each' in spec) {
-      var ret = [];
-      stream.on('end', function () {
-        next(ret.filter(function (obj) {
-          return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) : obj;
-        }));
-      })
+  // Augment $query parameter.
+  var query = prefix + ' ' + spec.$query;
 
-      if (typeof spec.$each == 'string') {
-        extract(stream, spec.$query, spec.$each, function (value) {
-          ret.push(value);
-        });
-      } else {
-        var obj = null;
-        
-        stream.query(spec.$query).on('match', function (tag, attributes) {
-          ret.push(obj = {});
-        });
+  if ('$each' in spec) {
 
-        Object.keys(spec.$each).forEach(function (key) {
-          extract(stream, combineQueries(spec.$query, spec.$each[key]), spec.$each[key], function (value) {
-            obj[key] = value;
-          });
+    // Array to populate.
+    var ret = [];
+    var parser = onSpecification(stream, spec.$each, query);
+    stream.query(query).on('match', function (tag, attributes) {
+      this.skip(function () {
+        ret.push(parser.result());
+        parser.reset();
+      });
+    });
+  
+    return {
+      result: function () {
+        return ret.filter(function (obj) {
+          return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) && obj[spec.$filter] : obj;
         });
+      },
+      reset: function () {
+        ret = [];
       }
+    };
 
-    } else if ('$value' in spec) {
-      extract(stream, combineQueries(spec.$query, spec.$value), spec.$value, function (value) {
-        obj = value;
-      });
-      stream.on('end', function () {
-        next(obj);
-      });
+  } else if ('$value' in spec) {
 
-    } else {
-      stream.on('end', function () {
-        next(null);
-      });
-    }
-
-  } else {
-    var obj = {};
-    Object.keys(spec).forEach(function (key) {
-      parseObject(stream, spec[key], function (value) {
-        obj[key] = value;
-      });
+    // String to populate.
+    var ret = null;
+    onValue(stream, combineQueries(query, spec.$value), spec.$value, function (value) {
+      ret = value;
     });
-    stream.on('end', function () {
-      next(obj);
-    });
+
+    return {
+      result: function () {
+        return ret;
+      },
+      reset: function () {
+        ret = null;
+      }
+    };
   }
+
+  throw new Error('Invalid specification for query ' + JSON.stringify(query));
 }
 
 function scrapi (manifest) {
@@ -130,19 +150,16 @@ function scrapi (manifest) {
   api.parseStream = function (req, res, next) {
     var stream = cssax.createStream();
 
-    // Toss errors.
-    stream.on('error', function () { });
+    var parser = onSpecification(stream, manifest.spec[req.url.pathname] ||
+      manifest.spec[req.url.pathname.replace(/^\//, '')] ||
+      manifest.spec['*'] ||
+      {});
 
-    var page = {};
-    var spec = manifest.spec[req.url.pathname] || manifest.spec[req.url.pathname.replace(/^\//, '')] || manifest.spec['*'] || {};
-    parseObject(stream, spec, function (json) {
-      page = json;
-    });
-
-    // Pipe our content.
-    res.pipe(stream).on('end', function () {
-      next(page);
-    });
+    res.pipe(stream)
+      .on('error', function () { }) // Toss errors
+      .on('end', function () {
+        next(parser.result());
+      })
   };
 
   return api;

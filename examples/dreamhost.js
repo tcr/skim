@@ -6,8 +6,15 @@ var manifest = {
   spec: {
     '*': {
       domains: {
-        $query: 'table.fancytable td.left strong',
-        $each: '(text)'
+        $query: 'table.fancytable > tr',
+        $each: {
+          domain: '(text) td.left strong',
+          subdomains: {
+            $query: '+ tbody[id] td.left strong',
+            $each: '(text) '
+          }
+        },
+        $filter: 'domain'
       }
     }
   }
@@ -26,7 +33,7 @@ dreamhost('/').get(function (err, json) {
         Nscmd: 'Nlogin'
       }, function (err, json) {
         dreamhost('index.cgi', {tree: 'domain.manage'}).get(function (err, json) {
-          console.log(json);
+          console.log(json.domains);
         });
       })
     });

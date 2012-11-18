@@ -1,4 +1,4 @@
-var scrapi = require('scrapi');
+var scrapi = require('..');
 
 // Define a specification for scraping Hacker News
 
@@ -51,11 +51,5 @@ if (require.main === module) {
   }
   exports.list(function (json) {
     printPage(0, json);
-    require('commander').prompt('Story: ', Number, function (story) {
-      if (story) {
-        require('open')(json.stories[story - 1].link);
-      }
-      process.exit(0);
-    });
   })
 };

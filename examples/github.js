@@ -20,6 +20,8 @@ var manifest = {
   }
 };
 
-scrapi(manifest, 'tcr/scrapi/commit/ba192e77a0797e64b6dc82542b2a4806c4d7db8e', function (json) {
+var github = scrapi(manifest);
+
+github('tcr/scrapi/commit/ba192e77a0797e64b6dc82542b2a4806c4d7db8e').get(function (err, json) {
   console.log(json);
 });

@@ -5,17 +5,19 @@ var scrapi = require('..');
 var manifest = {
   base: 'https://github.com',
   spec: {
-    changes: {
-      $query: '#toc p.explain',
-      $value: '(text ^\\d+) span + strong',
-    },
-    added: {
-      $query: '#toc p.explain',
-      $value: '(text ^\\d+) span + strong + strong',
-    },
-    deleted: {
-      $query: '#toc p.explain',
-      $value: '(text ^\\d+) span + strong + strong + strong',
+    '*': {
+      changes: {
+        $query: '#toc p.explain',
+        $value: '(text ^\\d+) span + strong',
+      },
+      added: {
+        $query: '#toc p.explain',
+        $value: '(text ^\\d+) span + strong + strong',
+      },
+      deleted: {
+        $query: '#toc p.explain',
+        $value: '(text ^\\d+) span + strong + strong + strong',
+      }
     }
   }
 };

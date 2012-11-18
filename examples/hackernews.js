@@ -5,20 +5,22 @@ var scrapi = require('..');
 var manifest = {
   base: 'http://news.ycombinator.com/',
   spec: {
-    stories: {
-      $query: 'table table tr:nth-child(3n+1)',
-      $each: {
-        title: '(text) a',
-        link: '(attr href) a',
-        user: '(text) + tr a[href^=user]',
-        comments: '(text ^\\d+) + tr a[href^=item]',
-        id: '(attr href \\d+$) + tr a[href^=item]'
+    '*': {
+      stories: {
+        $query: 'table table tr:nth-child(3n+1)',
+        $each: {
+          title: '(text) a',
+          link: '(attr href) a',
+          user: '(text) + tr a[href^=user]',
+          comments: '(text ^\\d+) + tr a[href^=item]',
+          id: '(attr href \\d+$) + tr a[href^=item]'
+        },
+        $filter: 'id'
       },
-      $filter: 'id'
-    },
-    next: {
-      $query: 'table table td:nth-child(1) + td.title',
-      $value: '(attr href) a'
+      next: {
+        $query: 'table table td:nth-child(1) + td.title',
+        $value: '(attr href) a'
+      }
     }
   }
 };

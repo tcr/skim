@@ -126,7 +126,7 @@ function scrapi (manifest) {
     stream.on('error', function () { });
 
     var page = {};
-    var spec = manifest.spec[req.url.pathname] || manifest.spec[req.url.pathname.replace(/^\//, '')] || {};
+    var spec = manifest.spec[req.url.pathname] || manifest.spec[req.url.pathname.replace(/^\//, '')] || manifest.spec['*'] || {};
     parseObject(stream, spec, function (json) {
       page = json;
     });

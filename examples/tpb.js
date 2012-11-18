@@ -5,13 +5,15 @@ var scrapi = require('..');
 var manifest = {
   base: 'http://thepiratebay.se',
   spec: {
-    torrents: {
-      $query: '#searchResult tr',
-      $each: {
-        title: '(text [^\\t\\n]+) .detName',
-        magnet: '(attr href) a[href^=magnet]'
-      },
-      $filter: 'magnet'
+    '*': {
+      torrents: {
+        $query: '#searchResult tr',
+        $each: {
+          title: '(text [^\\t\\n]+) .detName',
+          magnet: '(attr href) a[href^=magnet]'
+        },
+        $filter: 'magnet'
+      }
     }
   }
 };

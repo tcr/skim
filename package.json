@@ -1,6 +1,6 @@
 {
   "name": "scrapi",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Scrape websites simply using node.js.",
   "main": "scrapi.js",
   "dependencies": {

@@ -1,9 +1,9 @@
 # scrapi - scraping in node.js
 
-Manifest:
+Define your scraping parameters in a JSON manifest:
 
-```
-{
+```javascript
+var manifest = {
   "base": "http://news.ycombinator.com/",
   "spec": {
     "$query": "td.title ~ td ~ td.title > a",
@@ -15,9 +15,19 @@ Manifest:
 }
 ```
 
+Create your API:
+
+```javascript
+var api = scrapi(manifest);
+
+api('/').get(function (err, json) {
+  console.log(json);
+})
+```
+
 Result:
 
-```
+```javascript
 [ { link: 'https://www.hackerschool.com/blog/5-learning-c-with-gdb',
     title: 'Learning C with gdb' },
   { link: 'http://blogs.scientificamerican.com/guest-blog/2012/08/27/the-hidden-truths-about-calories/',

@@ -42,21 +42,29 @@ function parseObject (stream, spec, next) {
   if ('$query' in spec) {
     if ('$each' in spec) {
       var ret = [];
-      var obj = null;
-
-      stream.query(spec.$query).on('match', function (tag, attributes) {
-        ret.push(obj = {});
-      });
       stream.on('end', function () {
         next(ret.filter(function (obj) {
           return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) : obj;
         }));
       })
-      Object.keys(spec.$each).forEach(function (key) {
-        extract(stream, combineQueries(spec.$query, spec.$each[key]), spec.$each[key], function (value) {
-          obj[key] = value;
+
+      if (typeof spec.$each == 'string') {
+        extract(stream, spec.$query, spec.$each, function (value) {
+          ret.push(value);
         });
-      });
+      } else {
+        var obj = null;
+        
+        stream.query(spec.$query).on('match', function (tag, attributes) {
+          ret.push(obj = {});
+        });
+
+        Object.keys(spec.$each).forEach(function (key) {
+          extract(stream, combineQueries(spec.$query, spec.$each[key]), spec.$each[key], function (value) {
+            obj[key] = value;
+          });
+        });
+      }
 
     } else if ('$value' in spec) {
       extract(stream, combineQueries(spec.$query, spec.$value), spec.$value, function (value) {

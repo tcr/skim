@@ -1,6 +1,8 @@
 # scrapi
 
-Website scraping in node.js. **REMINDER:** Please ensure the TOS of any target site does not prohibit scraping.
+Website scraping in node.js!
+
+(I don't encourage violating the TOS of a target site that prohibits scraping.)
 
 ---
 

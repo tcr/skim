@@ -1,4 +1,8 @@
-# scrapi - scraping in node.js
+# scrapi
+
+Website scraping in node.js. **REMINDER:** Please ensure the TOS of any target site does not prohibit scraping.
+
+---
 
 Define your scraping parameters in a JSON manifest:
 
@@ -6,7 +10,7 @@ Define your scraping parameters in a JSON manifest:
 var manifest = {
   "base": "http://news.ycombinator.com/",
   "spec": {
-    "*": {
+    "/": {
       "$query": "td.title ~ td ~ td.title > a",
       "$each": {
         "title": "(text)",

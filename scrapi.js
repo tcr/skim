@@ -150,11 +150,25 @@ function scrapi (manifest) {
   api.parseStream = function (req, res, next) {
     var stream = cssax.createStream();
 
-    var parser = onSpecification(stream, manifest.spec[req.url.pathname] ||
-      manifest.spec[req.url.pathname.replace(/^\//, '')] ||
-      manifest.spec['*'] ||
-      {});
+    var spec = null;
+    Object.keys(manifest.spec).forEach(function (key) {
+      var parts = key.replace(/^\//, '').split('?');
+      var path = parts.shift(), query = parts.join('?');
+      if (req.url.pathname.replace(/^\//, '') == path) {
+        if (query) {
+          var query = rem.util.qs.parse(query);
+          for (var qkey in query) {
+            if (req.url.query[qkey] != query[qkey]) {
+              return;
+            }
+          }
+        }
+        spec = manifest.spec[key];
+      }
+    });
+    spec = spec || manifest.spec['*'] || {};
 
+    var parser = onSpecification(stream, spec);
     res.pipe(stream)
       .on('error', function () { }) // Toss errors
       .on('end', function () {

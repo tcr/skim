@@ -4,7 +4,7 @@ var read = require('read');
 var manifest = {
   base: 'https://panel.dreamhost.com',
   spec: {
-    '*': {
+    '?tree=domain.manage': {
       domains: {
         $query: 'table.fancytable > tr',
         $each: {
@@ -15,6 +15,12 @@ var manifest = {
           }
         },
         $filter: 'domain'
+      }
+    },
+    '?tree=domain.registration': {
+      domains: {
+        $query: '#registrations_table td.left a',
+        $each: '(text \\S+)'
       }
     }
   }
@@ -27,12 +33,12 @@ var dreamhost = scrapi(manifest);
 dreamhost('/').get(function (err, json) {
   read({prompt: 'Username: '}, function (err, username) {
     read({prompt: 'Password: ', silent: true}, function (err, password) {
-      dreamhost('index.cgi').post({
+      dreamhost('/').post({
         username: username,
         password: password,
         Nscmd: 'Nlogin'
       }, function (err, json) {
-        dreamhost('index.cgi', {tree: 'domain.manage'}).get(function (err, json) {
+        dreamhost({tree: 'domain.registration'}).get(function (err, json) {
           console.log(json.domains);
         });
       })

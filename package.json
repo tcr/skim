@@ -4,9 +4,10 @@
   "description": "Scrape websites simply using node.js.",
   "main": "scrapi.js",
   "dependencies": {
-    "rem": "~0.5.0",
+    "rem": "~0.5.10",
     "cssax": "0.0.4",
-    "tough-cookie": "~0.9.14"
+    "tough-cookie": "~0.9.14",
+    "read": "~1.0.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

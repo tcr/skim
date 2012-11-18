@@ -4,11 +4,23 @@ var read = require('read');
 var manifest = {
   base: 'https://mobile.twitter.com/',
   spec: {
-  	'/session/new': {
+  	'session/new': {
     	authenticity_token: '(attr value) input[name="authenticity_token"]',
     },
-    '/account': {
-    	name: '(text ^[^\\n]+) div.fullname'
+    'account': {
+    	name: '(text ^[^\\n]+) div.fullname',
+    	handle: '(text ^[^\\n]+) div.username',
+    },
+    '/': {
+    	tweets: {
+	    	$query: '#main_content table.tweet',
+	    	$each: {
+	    		name: '(text) .fullname',
+	    		handle: '(text @\\S+) .username',
+	    		text: '(text) .tweet-text'
+	    	}
+	    },
+	    next: '(attr href) .w-button-more a'
     }
   }
 };
@@ -25,6 +37,9 @@ tw('session/new').get(function (err, json) {
 				password: password
 			}, function (err, json) {
 				tw('account').get(function (err, json) {
+					console.log(json);
+				})
+				tw('/').get(function (err, json) {
 					console.log(json);
 				})
 			})

@@ -3,6 +3,8 @@ var rem = require('rem');
 var cssax = require('cssax');
 var toughCookie = require('tough-cookie'), Cookie = toughCookie.Cookie, CookieJar = toughCookie.CookieJar;
 
+rem.USER_AGENT = 'Mozilla/5.0 (compatible; Scrapi/1.0)'
+
 // Utilities
 
 function stripHTML (html) {
@@ -119,12 +121,13 @@ function scrapi (manifest) {
 
   api.parseStream = function (req, res, next) {
     var stream = cssax.createStream();
-    
+
     // Toss errors.
     stream.on('error', function () { });
 
     var page = {};
-    parseObject(stream, manifest.spec[req.url.pathname] || {}, function (json) {
+    var spec = manifest.spec[req.url.pathname] || manifest.spec[req.url.pathname.replace(/^\//, '')] || {};
+    parseObject(stream, spec, function (json) {
       page = json;
     });
 

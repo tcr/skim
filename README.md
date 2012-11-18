@@ -6,10 +6,12 @@ Define your scraping parameters in a JSON manifest:
 var manifest = {
   "base": "http://news.ycombinator.com/",
   "spec": {
-    "$query": "td.title ~ td ~ td.title > a",
-    "$each": {
-      "title": "(text)",
-      "link": "(attr href)"
+    "*": {
+      "$query": "td.title ~ td ~ td.title > a",
+      "$each": {
+        "title": "(text)",
+        "link": "(attr href)"
+      }
     }
   }
 };

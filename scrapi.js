@@ -186,16 +186,23 @@ function scrapi (manifest) {
     });
     spec = spec || manifest.spec['*'] || {};
 
-    // Add specification parser, return result after stream ends.
-    var parser = onSpecification(stream, spec);
-    res.pipe(stream)
-      .on('error', function () { }) // Toss errors
-      .on('end', function () {
-        next(parser.result());
-      })
+    // Pipre response into parser.
+    res.pipe(scrapi.parser(spec, next));
   };
 
   return api;
 }
+
+scrapi.parser = function (spec, next) {
+  // Build specification parser, return result after stream ends.
+  var stream = cssax.createStream();
+  var parser = onSpecification(stream, spec);
+  stream
+    .on('error', function () { }) // Toss errors
+    .on('end', function () {
+      next(parser.result());
+    })
+  return stream;
+};
 
 module.exports = scrapi;

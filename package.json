@@ -1,7 +1,7 @@
 {
   "name": "scrapi",
-  "version": "0.0.6",
-  "description": "Scrape websites simply using node.js.",
+  "version": "0.0.7",
+  "description": "Scrape websites simply. Streaming HTML parser combined with a flexible HTTP client.",
   "main": "scrapi.js",
   "dependencies": {
     "rem": "~0.5.11",

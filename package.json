@@ -4,9 +4,7 @@
   "description": "Scrape websites simply. Streaming HTML parser combined with a flexible HTTP client.",
   "main": "skim.js",
   "dependencies": {
-    "rem": "~0.5.11",
     "cssax": "0.0.6",
-    "tough-cookie": "~0.9.14",
     "read": "~1.0.4",
     "async": "~0.1.22"
   },

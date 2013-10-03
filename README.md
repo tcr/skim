@@ -1,35 +1,21 @@
-# scrapi
+# skim
 
-Website scraping in node.js!
+Parse a stream of HTML using CSS selectors to extract data. Doesn't require a DOM, thus it's fast and low-memory.
 
-(I don't encourage violating the TOS of a target site that prohibits scraping.)
-
----
+## Example
 
 Define your scraping parameters in a JSON manifest:
 
 ```javascript
-var manifest = {
-  "base": "http://news.ycombinator.com/",
-  "spec": {
-    "/": {
-      "$query": "td.title ~ td ~ td.title > a",
-      "$each": {
-        "title": "(text)",
-        "link": "(attr href)"
-      }
-    }
+rem.stream("http://news.ycombinator.com/").pipe(skim({
+  "$query": "td.title ~ td ~ td.title > a",
+  "$each": {
+    "title": "(text)",
+    "link": "(attr href)"
   }
-};
-```
-
-Create your API:
-
-```javascript
-var api = scrapi(manifest);
-api('/').get(function (err, json) {
+}, function (err, json) {
   console.log(json);
-})
+});
 ```
 
 Result:

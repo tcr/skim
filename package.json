@@ -1,8 +1,8 @@
 {
-  "name": "scrapi",
+  "name": "skim",
   "version": "0.0.8",
   "description": "Scrape websites simply. Streaming HTML parser combined with a flexible HTTP client.",
-  "main": "scrapi.js",
+  "main": "skim.js",
   "dependencies": {
     "rem": "~0.5.11",
     "cssax": "0.0.6",

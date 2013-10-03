@@ -1,9 +1,5 @@
 var async = require('async');
-var rem = require('rem');
 var cssax = require('cssax');
-var toughCookie = require('tough-cookie'), Cookie = toughCookie.Cookie, CookieJar = toughCookie.CookieJar;
-
-rem.USER_AGENT = 'Mozilla/5.0 (compatible; Scrapi/1.0)'
 
 // Utilities
 
@@ -122,78 +118,7 @@ function onSpecification (stream, spec, prefix) {
   };
 }
 
-// Create a Scrapi object that can stream and parse pages.
-function scrapi (manifest) {
-  var api = rem.create({
-    base: manifest.base,
-    uploadFormat: 'form'
-  }, {
-    key: 'SCRAPI'
-  });
-
-  var jar = new CookieJar();
-
-  api.pre('request', function (req, next) {
-    jar.getCookieString(rem.util.url.format(req.url), function (err, cookies) {
-      if (cookies) {
-        req.headers['cookie'] = cookies;
-      }
-      req.headers['accept'] = '*/*';
-      delete req.headers['host'];
-      req.redirect = false;
-      next();
-    })
-  });
-
-  api.pre('response', function (req, res, next) {
-    // Read cookies from headers.
-    if (res.headers['set-cookie'] instanceof Array) {
-      var cookies = res.headers['set-cookie'].map(Cookie.parse);
-    } else if (res.headers['set-cookie'] != null) {
-      var cookies = [Cookie.parse(res.headers['set-cookie'])];
-    } else {
-      var cookies = [];
-    }
-
-    // Retrieve authentication cookies from request using tough-cookie.
-    async.forEach(cookies, function (cookie, asyncnext) {
-      jar.setCookie(cookie, rem.util.url.format(req.url), asyncnext);
-    }, next);
-  });
-
-  api.parseStream = function (req, res, next) {
-    var stream = cssax.createStream();
-
-    // Find a specification URL that matches.
-    var spec = null;
-    Object.keys(manifest.spec).some(function (fullkey) {
-      return fullkey.split(/\s+/).some(function (key) {
-        var parts = key.replace(/^\//g, '').split('?');
-        var path = parts.shift(), query = parts.join('?');
-        if (req.url.pathname.replace(/^\//, '') == path) {
-          if (query) {
-            var query = rem.util.qs.parse(query);
-            for (var qkey in query) {
-              if (req.url.query[qkey] != query[qkey]) {
-                return;
-              }
-            }
-          }
-          spec = manifest.spec[fullkey];
-          return true;
-        }
-      });
-    });
-    spec = spec || manifest.spec['*'] || {};
-
-    // Pipre response into parser.
-    res.pipe(scrapi.parser(spec, next));
-  };
-
-  return api;
-}
-
-scrapi.parser = function (spec, next) {
+module.exports = function (spec, next) {
   // Build specification parser, return result after stream ends.
   var stream = cssax.createStream();
   var parser = onSpecification(stream, spec);
@@ -204,5 +129,3 @@ scrapi.parser = function (spec, next) {
     })
   return stream;
 };
-
-module.exports = scrapi;

@@ -1,6 +1,6 @@
 {
   "name": "skim",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scrape websites simply. Streaming HTML parser combined with a flexible HTTP client.",
   "main": "skim.js",
   "dependencies": {

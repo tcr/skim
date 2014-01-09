@@ -49,20 +49,19 @@ function onSpecification (stream, spec, prefix) {
   if ('$each' in spec) {
 
     // Array to populate.
+    // Skip first call.
     var ret = [], first = true;
     var parser = onSpecification(stream, spec.$each, query);
     stream.query(query).on('match', function (tag, attributes) {
-      if (first) {
-        first = false;
-      } else {
+      this.skip(function () {
         ret.push(parser.result());
-      }
-      parser.reset();
+        parser.reset();
+      })
     });
   
     return {
       result: function () {
-        var vals = ret.concat([parser.result()]);
+        var vals = ret;
         return vals.filter(function (obj) {
           return '$filter' in spec ? Object.prototype.hasOwnProperty.call(obj, spec.$filter) && obj[spec.$filter] : obj;
         });
